@@ -189,6 +189,8 @@ namespace HomeRun
             while (dataReader.Read())
                 colonne.Add(dataReader[0].ToString());
 
+            tuple.Add(colonne);
+
             // Chiudo
             dataReader.Close();
             CloseConnection();
@@ -199,7 +201,7 @@ namespace HomeRun
             // Creo
             cmd = new MySqlCommand(querySelect, connection);
             dataReader = cmd.ExecuteReader();
-            int j = 0;
+            int j = 1;
 
             // Leggo
             while (dataReader.Read())
