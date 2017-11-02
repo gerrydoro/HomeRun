@@ -16,9 +16,9 @@ namespace HomeRun
         {
             InitializeComponent();
 
+            DBConnect sessione = new DBConnect();
 
-
-
+            sessione.Select("automobile");
 
 
 

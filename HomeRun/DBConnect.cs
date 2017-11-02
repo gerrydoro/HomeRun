@@ -1,5 +1,6 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,6 +23,7 @@ namespace HomeRun
             Initialize();
         }
 
+
         //Initialize values
         private void Initialize()
         {
@@ -35,6 +37,7 @@ namespace HomeRun
 
             connection = new MySqlConnection(connectionString);
         }
+
 
         //open connection to database
         private bool OpenConnection()
@@ -54,7 +57,7 @@ namespace HomeRun
                 switch (ex.Number)
                 {
                     case 0:
-                        MessageBox.Show("Cannot connect to server.  Contact administrator");
+                        MessageBox.Show("Cannot connect to server. Contact administrator");
                         break;
 
                     case 1045:
@@ -64,6 +67,7 @@ namespace HomeRun
                 return false;
             }
         }
+
 
         //Close connection
         private bool CloseConnection()
@@ -79,6 +83,8 @@ namespace HomeRun
                 return false;
             }
         }
+
+
         //Insert statement
         public void Insert(string tabella, string[] campi, string[] valori)
         {
@@ -114,16 +120,20 @@ namespace HomeRun
             }
         }
 
+
         //Update statement
-        public void Update(string tabella, string identificativo, string valoreIdentificativo, string[] campi, string[] valori)
+        public void Update(string tabella, string campoIdentificativo, string valoreIdentificativo, string[] campi, string[] valori)
         {
             //string query = "UPDATE tableinfo SET name='Joe', age='22' WHERE name='John Smith'";
 
-            string query = "UPDATE " + tabella + " SET";
+            string query = "UPDATE " + tabella + " SET ";
 
             for (int i = 0; i < campi.Length; i++)
+                query += campi[i] + "='" + valori[i] + "', ";
 
+            query = query.Remove(query.Length - 3);
 
+            query += " WHERE " + campoIdentificativo + "='" + valoreIdentificativo + "'";
 
             //Open connection
             if (this.OpenConnection() == true)
@@ -143,10 +153,13 @@ namespace HomeRun
             }
         }
 
+
         //Delete statement
-        public void Delete()
+        public void Delete(string tabella, string campoIdentificativo, string valoreIdentificativo)
         {
-            string query = "DELETE FROM tableinfo WHERE name='John Smith'";
+            //string query = "DELETE FROM tableinfo WHERE name='John Smith'";
+
+            string query = "DELETE FROM " + tabella + " WHERE " + campoIdentificativo + "='" + valoreIdentificativo + "'";
 
             if (this.OpenConnection() == true)
             {
@@ -155,51 +168,65 @@ namespace HomeRun
                 this.CloseConnection();
             }
         }
+
+
         //Select statement
-        public List<string>[] Select()
+        public List<List<string>> Select(string tabella)
         {
-            string query = "SELECT * FROM tableinfo";
+            string querySelect = "SELECT * FROM " + tabella;
+            string queryColonne = "SHOW COLUMNS FROM " + tabella;
 
-            //Create a list to store the result
-            List<string >[] list = new List<string >[3];
-            list[0] = new List<string> ();
-            list[1] = new List<string> ();
-            list[2] = new List<string> ();
+            List<List<string>> tuple = new List<List<string>>();
+            List<string> colonne = new List<string>();
 
-            //Open connection
-            if (this.OpenConnection() == true)
+            ////////////////////////// COLONNE ////////////////////////////////
+            OpenConnection();
+            // Creo
+            MySqlCommand cmd = new MySqlCommand(queryColonne, connection);
+            MySqlDataReader dataReader = cmd.ExecuteReader();
+
+            // Leggo
+            while (dataReader.Read())
+                colonne.Add(dataReader[0].ToString());
+
+            // Chiudo
+            dataReader.Close();
+            CloseConnection();
+            ///////////////////////////////////////////////////////////////////
+
+            //////////////////////////// TUPLE ////////////////////////////////
+            OpenConnection();
+            // Creo
+            cmd = new MySqlCommand(querySelect, connection);
+            dataReader = cmd.ExecuteReader();
+            int j = 0;
+
+            // Leggo
+            while (dataReader.Read())
             {
-                //Create Command
-                MySqlCommand cmd = new MySqlCommand(query, connection);
-                //Create a data reader and Execute the command
-                MySqlDataReader dataReader = cmd.ExecuteReader();
+                tuple.Add(new List<string>());
 
-                //Read the data and store them in the list
-                while (dataReader.Read())
+                for (int i = 0; i < dataReader.FieldCount; i++)
                 {
-                    list[0].Add(dataReader["id"] + "");
-                    list[1].Add(dataReader["name"] + "");
-                    list[2].Add(dataReader["age"] + "");
+                    tuple[j].Add(dataReader[i].ToString());
                 }
 
-                //close Data Reader
-                dataReader.Close();
-
-                //close Connection
-                this.CloseConnection();
-
-                //return list to be displayed
-                return list;
+                j++;
             }
-            else
-            {
-                return list;
-            }
+
+            // Chiudo
+            dataReader.Close();
+            CloseConnection();
+            ///////////////////////////////////////////////////////////////////
+
+            return tuple;
         }
+
+
         //Count statement
-        public int Count()
+        public int Count(string tabella)
         {
-            string query = "SELECT Count(*) FROM tableinfo";
+            string query = "SELECT Count(*) FROM " + tabella;
             int Count = -1;
 
             //Open Connection
@@ -220,16 +247,6 @@ namespace HomeRun
             {
                 return Count;
             }
-        }
-
-        //Backup
-        public void Backup()
-        {
-        }
-
-        //Restore
-        public void Restore()
-        {
         }
     }
 }
